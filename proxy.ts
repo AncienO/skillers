@@ -3,8 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Import createServerClient from Supabase SSR
 import { createServerClient } from '@supabase/ssr'
 
-// Export async middleware function
-export async function middleware(request: NextRequest) {
+// Export async proxy function
+export async function proxy(request: NextRequest) {
   // Try catching any errors during initialization
   try {
     // Create an initial response object that we can mutate
@@ -68,18 +68,38 @@ export async function middleware(request: NextRequest) {
     // End destructure from getUser
     } = await supabase.auth.getUser()
 
-    // Determine if the incoming request is targeting the admin area (and not the login page)
-    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login'
+    // Determine if the incoming request is targeting a protected route
+    const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') || 
+                             request.nextUrl.pathname.startsWith('/directory') || 
+                             request.nextUrl.pathname.startsWith('/sec')
 
-    // If it is an admin route and there is no authenticated user session
-    if (isAdminRoute && !user) {
+    // Define auth-related routes that should never be blocked (to prevent redirect loops)
+    const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || 
+                        request.nextUrl.pathname.startsWith('/signup') || 
+                        request.nextUrl.pathname.startsWith('/admin/auth')
+
+    // If it is a protected route and not an auth route, and there is no authenticated user session
+    if (isProtectedRoute && !isAuthRoute && !user) {
       // Clone the current URL to build a clean redirect path
       const url = request.nextUrl.clone()
-      // Change the trailing pathname to point to login page
-      url.pathname = '/admin/login'
+      // Change the trailing pathname to point to global login page
+      url.pathname = '/login'
       // Return a 307 Temporary Redirect response to login right away
       return NextResponse.redirect(url)
     // End if statement
+    }
+
+    // Role-based Access Control for Admin Routes
+    if (request.nextUrl.pathname.startsWith('/admin') && !isAuthRoute && user) {
+      // Check if the current user's email exists in the admins table
+      const { data: adminRole } = await supabase.from('admins').select('id').eq('email', user.email).maybeSingle()
+      // If not an admin
+      if (!adminRole) {
+        // Kick them out to the directory
+        const url = request.nextUrl.clone()
+        url.pathname = '/directory'
+        return NextResponse.redirect(url)
+      }
     }
 
     // Return the augmented response object passing tokens down the chain to Layouts/Pages

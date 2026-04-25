@@ -1,4 +1,4 @@
-// Import cookies helper from Next.js server actions / components
+// Import cookies helper from Next.js server actions/components
 import { cookies } from 'next/headers'
 // Import createServerClient from Supabase SSR
 import { createServerClient } from '@supabase/ssr'
@@ -22,7 +22,7 @@ export async function createClient() {
         getAll() {
           // Return the array of all cookies mapped from the store
           return cookieStore.getAll()
-        // Close the getAll method
+          // Close the getAll method
         },
         // Define the setAll method to set multiple cookies
         setAll(cookiesToSet) {
@@ -32,22 +32,22 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               // Set each cookie into the store
               cookieStore.set(name, value, options)
-            // Close the forEach callback
+              // Close the forEach callback
             })
-          // Catch any errors that occur during setting
+            // Catch any errors that occur during setting
           } catch (error) {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
-          // Close catch block
+            // Close catch block
           }
-        // Close the setAll method
+          // Close the setAll method
         },
-      // Close cookies object
+        // Close cookies object
       },
-    // Close configuration object
+      // Close configuration object
     }
-  // Close the createServerClient call
+    // Close the createServerClient call
   )
-// Close createClient function
+  // Close createClient function
 }
