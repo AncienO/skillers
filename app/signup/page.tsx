@@ -3,34 +3,25 @@ import SignupForm from "@/components/forms/SignupForm"
 
 export const metadata: Metadata = {
   title: "Sign Up - Skillers",
-  description: "Apply to join the Skillers community directory."
+  description: "Create an account to join the Skillers community directory."
 }
 
 export default function SignupPage() {
   return (
-    <main className="min-h-screen bg-background pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4">
-            Join the <span className="gradient-text">Community</span>
-          {/* End title */}
+    <main className="min-h-screen bg-background pt-32 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+      <div className="w-full max-w-md mx-auto">
+
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">
+            Join <span className="gradient-text">Skillers</span>
           </h1>
-          {/* Subtitle */}
-          <p className="text-lg text-foreground/70">
-            Showcase your skills, share your goals, and connect with like-minded individuals.
-          {/* End subtitle */}
-          </p>
-        {/* End Header Section */}
         </div>
-        
-        {/* Render the SignupForm client component */}
+
+        {/* The signup form */}
         <SignupForm />
-        
-      {/* End container */}
+
       </div>
-    {/* End Main Wrapper */}
     </main>
-  // End return
   )
-// End component
 }

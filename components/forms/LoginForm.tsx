@@ -34,8 +34,8 @@ export default function LoginForm() {
         // Show error message
         setError(result.error)
       } else if (result?.success) {
-        // Redirect to directory using standard window location to trigger full reload
-        window.location.href = "/directory"
+        // Redirect to the appropriate page (admin dashboard or directory)
+        window.location.href = result.redirect || "/directory"
       }
     // End transition
     })

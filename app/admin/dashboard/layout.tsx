@@ -1,7 +1,7 @@
 // Import Next.js Link
 import Link from "next/link"
 // Import Lucide icons
-import { Users, LayoutDashboard, Megaphone, LogOut } from "lucide-react"
+import { Users, LayoutDashboard, Megaphone, LogOut, ShieldCheck } from "lucide-react"
 
 // Export default Admin Layout wrapper
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +28,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Member Management */}
           <Link href="/admin/dashboard/members" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
             <Users className="w-4 h-4" /> Member Approvals
+          </Link>
+          {/* SEC Management */}
+          <Link href="/admin/dashboard/sec" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
+            <ShieldCheck className="w-4 h-4" /> SEC Management
           </Link>
           {/* Announcements */}
           <Link href="/admin/dashboard/announcements" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">

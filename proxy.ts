@@ -76,6 +76,7 @@ export async function proxy(request: NextRequest) {
     // Define auth-related routes that should never be blocked (to prevent redirect loops)
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || 
                         request.nextUrl.pathname.startsWith('/signup') || 
+                        request.nextUrl.pathname === '/admin/login' ||
                         request.nextUrl.pathname.startsWith('/admin/auth')
 
     // If it is a protected route and not an auth route, and there is no authenticated user session
