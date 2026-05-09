@@ -284,3 +284,45 @@ CREATE POLICY "Members can remove own reactions"      ON story_reactions FOR DEL
 -- Token transactions RLS (members read own, admins read all)
 CREATE POLICY "Members can read own tokens"  ON token_transactions FOR SELECT TO authenticated USING (member_id = auth.uid());
 CREATE POLICY "Admins can manage tokens"     ON token_transactions FOR ALL   TO authenticated USING (is_admin());
+
+-- ─── TOKEN SYSTEM REBUILD (Phase 3) ─────────────────────────────────────────
+-- Replace single tokens column with 4 token type columns per the official spec:
+--   t1 = Bronze (1 pt each)   t2 = Silver (2 pts each)
+--   t3 = Gold   (3 pts each)  t4 = Diamond (5 pts each)
+-- Score is always computed: (t1×1) + (t2×2) + (t3×3) + (t4×5)
+-- Only admin awards/deducts tokens. Changes are permanent until admin edits.
+
+ALTER TABLE members
+  DROP COLUMN IF EXISTS tokens,
+  ADD COLUMN IF NOT EXISTS t1 INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS t2 INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS t3 INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS t4 INTEGER NOT NULL DEFAULT 0;
+
+-- Drop old token_transactions table and recreate per spec
+DROP TABLE IF EXISTS token_transactions;
+CREATE TABLE token_transactions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    member_id   UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    token_type  TEXT NOT NULL CHECK (token_type IN ('t1','t2','t3','t4')),
+    qty         INTEGER NOT NULL,               -- positive = award, negative = deduct
+    type        TEXT NOT NULL DEFAULT 'award' CHECK (type IN ('award','deduct','admin_set')),
+    reason      TEXT NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE token_transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Members read own transactions"  ON token_transactions FOR SELECT TO authenticated USING (member_id = auth.uid());
+CREATE POLICY "Admins manage token ledger"     ON token_transactions FOR ALL   TO authenticated USING (is_admin());
+
+-- Function: award or deduct a specific token type, floor at 0
+CREATE OR REPLACE FUNCTION mutate_tokens(uid UUID, ttype TEXT, amount INTEGER)
+RETURNS void AS $$
+DECLARE col TEXT := ttype;
+BEGIN
+  EXECUTE format(
+    'UPDATE members SET %I = GREATEST(0, COALESCE(%I, 0) + $1) WHERE id = $2',
+    col, col
+  ) USING amount, uid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

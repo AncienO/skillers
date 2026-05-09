@@ -4,19 +4,25 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { BookOpen, User, Gem, ArrowLeft, LogOut } from "lucide-react"
-import { getTokenTier } from "@/lib/tokens"
+import { getTokenTier, playerScore, TOKEN_DEFS, TOKEN_FILTERS, type PlayerTokens } from "@/lib/tokens"
 
 interface Props {
   memberId: string
   userName: string
   avatarUrl: string | null
-  tokens: number
+  t1: number
+  t2: number
+  t3: number
+  t4: number
   isGeniusCircle: boolean
 }
 
-export default function DashboardSidebar({ userName, avatarUrl, tokens, isGeniusCircle }: Props) {
+export default function DashboardSidebar({ userName, avatarUrl, t1, t2, t3, t4, isGeniusCircle }: Props) {
   const pathname = usePathname()
-  const tier = getTokenTier(tokens)
+  const tokens: PlayerTokens = { t1, t2, t3, t4 }
+  const tierKey = getTokenTier(tokens)
+  const tier    = TOKEN_DEFS[tierKey]
+  const score   = playerScore(tokens)
 
   const navItems = [
     { icon: BookOpen, label: "Feed",         href: "/dashboard"         },
@@ -38,23 +44,38 @@ export default function DashboardSidebar({ userName, avatarUrl, tokens, isGenius
         </Link>
       </div>
 
-      {/* Token badge */}
+      {/* Token summary */}
       <div className="px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2.5 bg-[#F7F8FA] rounded-xl px-3 py-2.5">
+        <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${tier.bg} border ${tier.border}`}>
           <div className="relative w-8 h-8 flex-shrink-0">
             <Image
               src="/ingeniusly-ghana-mark.png"
-              alt="tokens"
+              alt={tier.name}
               width={32}
               height={32}
               className="object-contain"
-              style={{ filter: tier.filter }}
+              style={{ filter: TOKEN_FILTERS[tierKey] }}
             />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black text-navy-800">{tokens.toLocaleString()} tokens</p>
-            <p className={`text-xs font-bold ${tier.color}`}>{tier.label}</p>
+            <p className="text-xs font-black text-navy-800">{score} pts</p>
+            <p className={`text-xs font-bold ${tier.color}`}>{tier.name} Tier</p>
           </div>
+        </div>
+
+        {/* Mini token counts */}
+        <div className="flex gap-2 mt-2">
+          {(["t1","t2","t3","t4"] as const).map(k => {
+            const def = TOKEN_DEFS[k]
+            const count = tokens[k]
+            return (
+              <div key={k} title={`${count} ${def.name} (${def.val} pt each)`}
+                className={`flex-1 flex flex-col items-center rounded-lg py-1 ${def.bg} border ${def.border}`}>
+                <span className={`text-xs font-black ${def.color}`}>{count}</span>
+                <span className={`text-[9px] font-bold ${def.color} opacity-70`}>{def.name.slice(0,2)}</span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -63,17 +84,13 @@ export default function DashboardSidebar({ userName, avatarUrl, tokens, isGenius
         {navItems.map(({ icon: Icon, label, href }) => {
           const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href)
           return (
-            <Link
-              key={href}
-              href={href}
+            <Link key={href} href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                active
-                  ? "bg-navy-50 text-navy-700 border border-navy-100"
-                  : "text-muted hover:bg-[#F7F8FA] hover:text-navy-700"
+                active ? "bg-navy-50 text-navy-700 border border-navy-100"
+                       : "text-muted hover:bg-[#F7F8FA] hover:text-navy-700"
               }`}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {label}
+              <Icon className="w-4 h-4 flex-shrink-0" />{label}
             </Link>
           )
         })}
@@ -91,9 +108,7 @@ export default function DashboardSidebar({ userName, avatarUrl, tokens, isGenius
           <div className="w-8 h-8 rounded-full bg-navy-100 flex items-center justify-center text-navy-600 font-black text-sm overflow-hidden flex-shrink-0">
             {avatarUrl ? (
               <Image src={avatarUrl} alt={userName} width={32} height={32} className="object-cover" />
-            ) : (
-              userName.charAt(0).toUpperCase()
-            )}
+            ) : userName.charAt(0).toUpperCase()}
           </div>
           <p className="text-sm font-bold text-navy-800 truncate">{userName}</p>
         </div>

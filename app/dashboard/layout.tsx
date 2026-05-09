@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, name, avatar_url, tokens, is_genius_circle, status")
+    .select("id, name, avatar_url, t1, t2, t3, t4, is_genius_circle, status")
     .eq("id", user.id)
     .single()
 
@@ -22,7 +22,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         memberId={member.id}
         userName={member.name}
         avatarUrl={member.avatar_url}
-        tokens={member.tokens ?? 0}
+        t1={member.t1 ?? 0}
+        t2={member.t2 ?? 0}
+        t3={member.t3 ?? 0}
+        t4={member.t4 ?? 0}
         isGeniusCircle={member.is_genius_circle ?? false}
       />
       <main className="ml-64 flex-1 min-h-screen overflow-y-auto">

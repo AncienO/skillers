@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { getTokenTier, TOKEN_TIERS } from "@/lib/tokens"
+import { getTokenTier, playerScore, TOKEN_DEFS, TOKEN_FILTERS, type PlayerTokens } from "@/lib/tokens"
 import Image from "next/image"
 import Link from "next/link"
 import { Edit3 } from "lucide-react"
@@ -14,17 +14,16 @@ export default async function ProfilePage() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, name, bio, avatar_url, tokens, sec_role, is_sec, is_genius_circle, slug, created_at")
+    .select("id, name, bio, avatar_url, t1, t2, t3, t4, sec_role, is_sec, is_genius_circle, slug, created_at")
     .eq("id", user.id)
     .single()
 
   if (!member) redirect("/login")
 
-  const tier = getTokenTier(member.tokens ?? 0)
-  const nextTier = TOKEN_TIERS.find(t => (member.tokens ?? 0) < t.min)
-  const progress = nextTier
-    ? Math.min(100, ((member.tokens ?? 0) - tier.min) / (nextTier.min - tier.min) * 100)
-    : 100
+  const tokens: PlayerTokens = { t1: member.t1 ?? 0, t2: member.t2 ?? 0, t3: member.t3 ?? 0, t4: member.t4 ?? 0 }
+  const tierKey = getTokenTier(tokens)
+  const tier    = TOKEN_DEFS[tierKey]
+  const score   = playerScore(tokens)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -49,14 +48,14 @@ export default async function ProfilePage() {
                 member.name.charAt(0).toUpperCase()
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full p-0.5">
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full p-0.5 border border-border">
               <Image
                 src="/ingeniusly-ghana-mark.png"
-                alt={tier.label}
+                alt={tier.name}
                 width={20}
                 height={20}
                 className="object-contain w-full h-full"
-                style={{ filter: tier.filter }}
+                style={{ filter: TOKEN_FILTERS[tierKey] }}
               />
             </div>
           </div>
@@ -67,7 +66,7 @@ export default async function ProfilePage() {
             )}
             {member.is_genius_circle && (
               <span className="inline-flex items-center gap-1 text-xs font-black text-gold-700 bg-gold-100 px-2 py-0.5 rounded-full mt-1">
-                ⭐ Genius Circle
+                Genius Circle
               </span>
             )}
           </div>
@@ -78,61 +77,54 @@ export default async function ProfilePage() {
         )}
       </div>
 
-      {/* Token progress */}
+      {/* Token balance */}
       <div className="bg-white border border-border rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <h3 className="font-black text-navy-800">Token Balance</h3>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${tier.bg} ${tier.border}`}>
             <Image
               src="/ingeniusly-ghana-mark.png"
-              alt={tier.label}
-              width={24}
-              height={24}
+              alt={tier.name}
+              width={16}
+              height={16}
               className="object-contain"
-              style={{ filter: tier.filter }}
+              style={{ filter: TOKEN_FILTERS[tierKey] }}
             />
-            <span className={`text-sm font-black ${tier.color}`}>{tier.label}</span>
+            <span className={`text-xs font-black ${tier.color}`}>{tier.name} Tier</span>
           </div>
         </div>
 
-        <p className="text-3xl font-black text-navy-800 mb-4">{(member.tokens ?? 0).toLocaleString()} <span className="text-base font-semibold text-muted">tokens</span></p>
+        <p className="text-4xl font-black text-navy-800 mb-5">
+          {score.toLocaleString()}
+          <span className="text-base font-semibold text-muted ml-2">pts</span>
+        </p>
 
-        {/* Progress bar to next tier */}
-        {nextTier && (
-          <div>
-            <div className="flex justify-between text-xs font-semibold text-muted mb-1.5">
-              <span>{tier.label} · {member.tokens ?? 0} tokens</span>
-              <span>{nextTier.label} · {nextTier.min} tokens</span>
-            </div>
-            <div className="h-2 bg-[#F7F8FA] rounded-full overflow-hidden border border-border">
-              <div
-                className="h-full bg-gradient-to-r from-navy-400 to-gold-500 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted font-medium mt-1.5">{nextTier.min - (member.tokens ?? 0)} tokens to {nextTier.label}</p>
-          </div>
-        )}
-
-        {/* Tier legend */}
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          {TOKEN_TIERS.map(t => (
-            <div key={t.label} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F7F8FA]">
-              <Image
-                src="/ingeniusly-ghana-mark.png"
-                alt={t.label}
-                width={20}
-                height={20}
-                className="object-contain"
-                style={{ filter: t.filter }}
-              />
-              <div>
-                <p className={`text-xs font-black ${t.color}`}>{t.label}</p>
-                <p className="text-xs text-muted">{t.min}{t.max ? `–${t.max}` : "+"} tokens</p>
+        {/* Per-type breakdown */}
+        <div className="grid grid-cols-4 gap-3">
+          {(["t1", "t2", "t3", "t4"] as const).map(k => {
+            const def   = TOKEN_DEFS[k]
+            const count = tokens[k]
+            return (
+              <div key={k} className={`rounded-xl p-3 border ${def.bg} ${def.border} flex flex-col items-center gap-1`}>
+                <Image
+                  src="/ingeniusly-ghana-mark.png"
+                  alt={def.name}
+                  width={28}
+                  height={28}
+                  className="object-contain"
+                  style={{ filter: TOKEN_FILTERS[k] }}
+                />
+                <span className={`text-xl font-black ${def.color}`}>{count}</span>
+                <span className={`text-xs font-bold ${def.color} opacity-80`}>{def.name}</span>
+                <span className="text-[10px] text-muted font-semibold">{def.val} pt each</span>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
+
+        <p className="text-xs text-muted font-medium mt-4 text-center">
+          Score = (Bronze×1) + (Silver×2) + (Gold×3) + (Diamond×5) &mdash; updated by admin
+        </p>
       </div>
     </div>
   )

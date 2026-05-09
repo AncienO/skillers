@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import Image from "next/image"
 import { postStory, deleteStory, toggleReaction } from "@/lib/actions/stories.actions"
-import { getTokenTier } from "@/lib/tokens"
+import { getTokenTier, TOKEN_DEFS, TOKEN_FILTERS, type PlayerTokens } from "@/lib/tokens"
 import { Trash2, Send, Flame, Heart, Trophy, Star } from "lucide-react"
 
 interface Reaction { id: string; emoji: string; member_id: string }
@@ -12,7 +12,7 @@ interface Story {
   content: string
   image_url: string | null
   created_at: string
-  member: { id: string; name: string; avatar_url: string | null; tokens: number } | null
+  member: { id: string; name: string; avatar_url: string | null; t1: number; t2: number; t3: number; t4: number } | null
   story_reactions: Reaction[]
 }
 
@@ -95,7 +95,7 @@ export default function StoriesFeed({
           className="w-full text-sm font-medium text-navy-800 bg-transparent outline-none resize-none placeholder:text-muted"
         />
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-          <p className="text-xs text-muted font-medium">⌘ + Enter to post · earn 5 tokens</p>
+          <p className="text-xs text-muted font-medium">⌘ + Enter to post · earn 1 Bronze token</p>
           <button
             onClick={handlePost}
             disabled={!draft.trim()}
@@ -114,7 +114,14 @@ export default function StoriesFeed({
         </div>
       ) : (
         stories.map(story => {
-          const tier = getTokenTier(story.member?.tokens ?? 0)
+          const memberTokens: PlayerTokens = {
+            t1: story.member?.t1 ?? 0,
+            t2: story.member?.t2 ?? 0,
+            t3: story.member?.t3 ?? 0,
+            t4: story.member?.t4 ?? 0,
+          }
+          const tierKey = getTokenTier(memberTokens)
+          const tier    = TOKEN_DEFS[tierKey]
           const myReaction = story.story_reactions.find(r => r.member_id === currentUserId)
           const isOwn = story.member?.id === currentUserId
 
@@ -140,18 +147,18 @@ export default function StoriesFeed({
                       <div className="absolute -bottom-1 -right-1 w-4 h-4">
                         <Image
                           src="/ingeniusly-ghana-mark.png"
-                          alt={tier.label}
+                          alt={tier.name}
                           width={16}
                           height={16}
                           className="object-contain"
-                          style={{ filter: tier.filter }}
+                          style={{ filter: TOKEN_FILTERS[tierKey] }}
                         />
                       </div>
                     )}
                   </div>
                   <div>
                     <p className="text-sm font-black text-navy-800">{story.member?.name ?? "Skiller"}</p>
-                    <p className={`text-xs font-bold ${tier.color}`}>{tier.label} · {timeAgo(story.created_at)}</p>
+                    <p className={`text-xs font-bold ${tier.color}`}>{tier.name} · {timeAgo(story.created_at)}</p>
                   </div>
                 </div>
                 {isOwn && !story.id.startsWith("opt-") && (

@@ -36,16 +36,16 @@ export default function SignupForm() {
       return
     }
 
-    // Start transition for server call
     startTransition(async () => {
-      // Call server action with formData
-      const result = await registerMember(formData)
-
-      // Handle response
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.success) {
-        setSuccess(true)
+      try {
+        const result = await registerMember(formData)
+        if (result?.error) {
+          setError(result.error)
+        } else if (result?.success) {
+          setSuccess(true)
+        }
+      } catch {
+        setError("Something went wrong. Please try again.")
       }
     })
   }

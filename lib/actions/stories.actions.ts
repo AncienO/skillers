@@ -9,7 +9,7 @@ export async function getStories() {
     .from("stories")
     .select(`
       id, content, image_url, created_at,
-      member:members ( id, name, avatar_url, tokens ),
+      member:members ( id, name, avatar_url, t1, t2, t3, t4 ),
       story_reactions ( id, emoji, member_id )
     `)
     .order("created_at", { ascending: false })
@@ -34,8 +34,8 @@ export async function postStory(formData: FormData) {
 
   if (error) return { error: error.message }
 
-  // Award tokens for posting
-  await supabase.rpc("add_tokens", { uid: user.id, amount: 5 })
+  // Award 1 Bronze token for posting a story
+  await supabase.rpc("mutate_tokens", { uid: user.id, ttype: "t1", amount: 1 })
 
   revalidatePath("/dashboard")
   return { success: true }
@@ -73,7 +73,8 @@ export async function toggleReaction(storyId: string, emoji: string) {
     // Award 2 tokens to story author
     const { data: story } = await supabase.from("stories").select("member_id").eq("id", storyId).single()
     if (story && story.member_id !== user.id) {
-      await supabase.rpc("add_tokens", { uid: story.member_id, amount: 2 })
+      // Award 1 Bronze token to the story author for receiving a reaction
+      await supabase.rpc("mutate_tokens", { uid: story.member_id, ttype: "t1", amount: 1 })
     }
   }
 

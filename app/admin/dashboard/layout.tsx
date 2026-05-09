@@ -3,13 +3,14 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Users, LayoutDashboard, Megaphone, LogOut, ShieldCheck, Star } from "lucide-react"
+import { Users, LayoutDashboard, Megaphone, LogOut, ShieldCheck, Star, Coins } from "lucide-react"
 
 const navItems = [
   { href: "/admin/dashboard",                label: "Overview",         icon: LayoutDashboard },
   { href: "/admin/dashboard/members",        label: "Member Approvals", icon: Users           },
   { href: "/admin/dashboard/sec",            label: "SEC Management",   icon: ShieldCheck     },
   { href: "/admin/dashboard/genius-circle",  label: "Genius Circle",    icon: Star            },
+  { href: "/admin/dashboard/tokens",         label: "Tokens",           icon: Coins           },
   { href: "/admin/dashboard/announcements",  label: "Announcements",    icon: Megaphone       },
 ]
 

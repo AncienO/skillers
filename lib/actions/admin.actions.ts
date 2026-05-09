@@ -279,27 +279,78 @@ export async function toggleGeniusCircle(memberId: string, grant: boolean) {
   return { success: true }
 }
 
-// Award tokens to a member
-export async function awardTokens(memberId: string, amount: number, reason: string) {
+// Fetch all approved members with their token counts for the token management page
+export async function getMembersWithTokens() {
   const adminClient = await getAdminClient()
 
-  const { error: txError } = await adminClient
-    .from("token_transactions")
-    .insert({ member_id: memberId, amount, reason })
-
-  if (txError) return { error: txError.message }
-
-  const { error: updateError } = await adminClient
+  const { data, error } = await adminClient
     .from("members")
-    .update({ tokens: adminClient.rpc("increment_tokens", { member_id: memberId, amount }) })
-    .eq("id", memberId)
+    .select("id, name, avatar_url, t1, t2, t3, t4")
+    .eq("status", "approved")
+    .order("name")
 
-  if (updateError) {
-    // Fallback: fetch current and add
-    const { data: m } = await adminClient.from("members").select("tokens").eq("id", memberId).single()
-    await adminClient.from("members").update({ tokens: (m?.tokens ?? 0) + amount }).eq("id", memberId)
+  return { data, error }
+}
+
+// Fetch recent token transactions for a member
+export async function getMemberTransactions(memberId: string) {
+  const adminClient = await getAdminClient()
+
+  const { data, error } = await adminClient
+    .from("token_transactions")
+    .select("id, token_type, qty, type, reason, created_at")
+    .eq("member_id", memberId)
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  return { data, error }
+}
+
+// Award or deduct tokens of a specific type for a member (admin only)
+// amount > 0 = award, amount < 0 = deduct
+export async function mutateTokens(
+  memberId: string,
+  tokenType: "t1" | "t2" | "t3" | "t4",
+  amount: number,
+  reason: string
+) {
+  if (amount === 0) return { error: "Amount cannot be zero." }
+
+  const adminClient = await getAdminClient()
+
+  // Validate deduction won't go below zero
+  if (amount < 0) {
+    const { data: m } = await adminClient
+      .from("members")
+      .select("t1, t2, t3, t4")
+      .eq("id", memberId)
+      .single()
+
+    const current = (m as Record<string, number> | null)?.[tokenType] ?? 0
+    if (!m || current + amount < 0) {
+      return { error: "Deduction would result in a negative token count." }
+    }
   }
 
+  // Update the column via the SECURITY DEFINER RPC
+  const { error: rpcError } = await adminClient.rpc("mutate_tokens", {
+    uid: memberId,
+    ttype: tokenType,
+    amount,
+  })
+
+  if (rpcError) return { error: rpcError.message }
+
+  // Log the transaction manually (the RPC only updates the column)
+  await adminClient.from("token_transactions").insert({
+    member_id:  memberId,
+    token_type: tokenType,
+    qty:        amount,
+    type:       amount > 0 ? "award" : "deduct",
+    reason:     reason || (amount > 0 ? "Admin award" : "Admin deduction"),
+  })
+
   revalidatePath("/dashboard")
+  revalidatePath("/admin/dashboard/tokens")
   return { success: true }
 }
