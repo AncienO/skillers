@@ -1,29 +1,28 @@
-// Import Next.js notFound utility to handle missing profiles
 import { notFound } from "next/navigation"
-// Import Supabase Server Client
 import { createClient } from "@/lib/supabase/server"
-// Import Next.js Link
 import Link from "next/link"
-// Import Connect Form Component
 import ConnectForm from "@/components/forms/ConnectForm"
-// Import Lucide icons
-import { ArrowLeft, Mail, Target, Tag, ShieldCheck } from "lucide-react"
+import { ArrowLeft, Target, Tag, ShieldCheck } from "lucide-react"
 
-// Define the shape of the Page props expecting dynamic params
+interface MemberGoal {
+  id: string
+  title: string
+  description: string | null
+}
+
+interface MemberTag {
+  id: string
+  label: string
+}
+
 interface MemberProfileProps {
-  // The params promise containing the slug string
   params: Promise<{ slug: string }>
 }
 
-// Export the default async Server Component for the profile page
 export default async function MemberProfilePage({ params }: MemberProfileProps) {
-  // Await the params to extract the slug
   const { slug } = await params
-  
-  // Initialize Supabase client
   const supabase = await createClient()
 
-  // Query the specific member by slug, joining goals and tags
   const { data: member, error } = await supabase
     .from("members")
     .select(`
@@ -31,152 +30,107 @@ export default async function MemberProfilePage({ params }: MemberProfileProps) 
       goals ( id, title, description ),
       tags ( id, label )
     `)
-    // Filter by the URL slug
     .eq("slug", slug)
-    // Only fetch approved members
     .eq("status", "approved")
-    // Retrieve a single record
     .maybeSingle()
 
-  // If there's an error or the member doesn't exist, return a 404 page
-  if (error || !member) {
-    // Trigger Next.js standard 404
-    notFound()
-  // End if
-  }
+  if (error || !member) notFound()
 
-  // Return the JSX interface
   return (
-    // Main wrapper
-    <main className="min-h-screen bg-background pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-      {/* Centered container */}
+    <main className="min-h-screen bg-surface-alt pt-28 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto animate-fade-in">
-        
-        {/* Back navigation link */}
-        <Link href="/directory" className="inline-flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-brand-600 transition-colors mb-8">
+
+        {/* Back link */}
+        <Link
+          href="/directory"
+          className="inline-flex items-center gap-2 text-sm font-bold text-muted hover:text-navy-600 transition-colors mb-8"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to Directory
         </Link>
 
-        {/* Profile Card Container */}
-        <div className="glass-panel rounded-3xl overflow-hidden relative">
-          
-          {/* Decorative Top Banner */}
-          <div className="h-32 bg-gradient-to-r from-brand-500/20 to-purple-500/20 w-full" />
-          
-          {/* Main content padding */}
+        {/* Profile card */}
+        <div className="card overflow-hidden">
+
+          {/* Top banner */}
+          <div className="h-28 bg-gradient-to-r from-navy-600 to-navy-400 w-full" />
+
           <div className="px-8 pb-10">
-            
-            {/* Header row (Avatar + Connect Button) */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 -mt-16 mb-8">
-              {/* Avatar Wrapper */}
-              <div className="w-32 h-32 rounded-2xl bg-surface border-4 border-surface shadow-xl flex items-center justify-center text-4xl font-bold text-brand-600 overflow-hidden shrink-0 relative z-10">
-                {/* If avatar URL exists, render img, else fallback */}
+
+            {/* Avatar row */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 -mt-14 mb-8">
+              <div className="w-28 h-28 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-navy-600 overflow-hidden flex-shrink-0 relative z-10">
                 {member.avatar_url ? (
                   <img src={member.avatar_url} alt={member.name} className="w-full h-full object-cover" />
                 ) : (
                   member.name.charAt(0).toUpperCase()
                 )}
-              {/* End Avatar Wrapper */}
               </div>
-              
-              {/* Connect Form Modal Trigger */}
               <ConnectForm memberId={member.id} memberName={member.name} goals={member.goals || []} />
-            {/* End Header row */}
             </div>
 
-            {/* Profile Info */}
+            {/* Name / bio */}
             <div className="mb-10">
-              {/* Name */}
-              <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-black text-navy-600 mb-2 flex items-center gap-3 flex-wrap">
                 {member.name}
-                {/* Conditional SEC Badge */}
                 {member.is_sec && (
-                  <span className="text-sm font-bold text-purple-600 bg-purple-100 dark:bg-purple-500/20 px-3 py-1 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-4 h-4" />
+                  <span className="text-sm font-extrabold text-gold-700 bg-gold-100 border border-gold-200 px-3 py-1 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
                     {member.sec_role?.replace(/_/g, ' ').toUpperCase()}
                   </span>
                 )}
-              {/* End Name */}
               </h1>
-              
-              {/* Bio block */}
               {member.bio && (
-                <p className="text-lg text-foreground/80 leading-relaxed max-w-3xl">
+                <p className="text-lg text-muted font-medium leading-relaxed max-w-3xl">
                   {member.bio}
                 </p>
               )}
-            {/* End Profile Info */}
             </div>
 
-            {/* Content Grid (Goals & Tags) */}
+            {/* Goals + Tags grid */}
             <div className="grid md:grid-cols-3 gap-8">
-              
-              {/* Goals Column (takes 2/3 space) */}
-              <div className="md:col-span-2 space-y-6">
-                {/* Section Header */}
-                <h2 className="text-xl font-bold flex items-center gap-2 mb-4 border-b border-border pb-2">
-                  <Target className="w-5 h-5 text-brand-500" /> Current Goals
+
+              {/* Goals (2/3) */}
+              <div className="md:col-span-2 space-y-4">
+                <h2 className="text-lg font-black text-navy-600 flex items-center gap-2 pb-2 border-b border-border">
+                  <Target className="w-5 h-5 text-gold-500" /> Current Goals
                 </h2>
-                
-                {/* Map over goals */}
                 {member.goals?.length > 0 ? (
-                  member.goals.map((goal: any) => (
-                    // Goal Card
-                    <div key={goal.id} className="bg-surface/50 border border-border p-5 rounded-2xl hover:border-brand-300 transition-colors">
-                      {/* Goal Title */}
-                      <h3 className="font-bold text-lg mb-2">{goal.title}</h3>
-                      {/* Goal Description */}
+                  (member.goals as MemberGoal[]).map((goal) => (
+                    <div key={goal.id} className="bg-navy-50 border border-navy-100 p-5 rounded-xl hover:border-navy-200 transition-colors">
+                      <h3 className="font-extrabold text-navy-600 mb-1.5">{goal.title}</h3>
                       {goal.description && (
-                        <p className="text-foreground/70">{goal.description}</p>
+                        <p className="text-muted font-medium text-sm leading-relaxed">{goal.description}</p>
                       )}
-                    {/* End Goal Card */}
                     </div>
                   ))
                 ) : (
-                  // Empty Goals state
-                  <p className="text-foreground/50 italic">No goals showcased yet.</p>
+                  <p className="text-muted italic font-medium">No goals showcased yet.</p>
                 )}
-              {/* End Goals Column */}
               </div>
 
-              {/* Tags Column (takes 1/3 space) */}
-              <div className="space-y-6">
-                {/* Section Header */}
-                <h2 className="text-xl font-bold flex items-center gap-2 mb-4 border-b border-border pb-2">
-                  <Tag className="w-5 h-5 text-brand-500" /> Expertise & Interests
+              {/* Tags (1/3) */}
+              <div>
+                <h2 className="text-lg font-black text-navy-600 flex items-center gap-2 pb-2 border-b border-border mb-4">
+                  <Tag className="w-5 h-5 text-gold-500" /> Expertise &amp; Interests
                 </h2>
-                
-                {/* Tags Flex Container */}
                 <div className="flex flex-wrap gap-2">
-                  {/* Map over tags */}
                   {member.tags?.length > 0 ? (
-                    member.tags.map((tag: any) => (
-                      // Tag Pill
-                      <span key={tag.id} className="px-3 py-1.5 bg-surface-hover border border-border rounded-lg text-sm font-medium">
+                    (member.tags as MemberTag[]).map((tag) => (
+                      <span key={tag.id} className="px-3 py-1.5 bg-navy-50 border border-navy-100 rounded-lg text-sm font-bold text-navy-600">
                         {tag.label}
                       </span>
                     ))
                   ) : (
-                    // Empty Tags state
-                    <p className="text-foreground/50 italic">No tags selected.</p>
+                    <p className="text-muted italic font-medium text-sm">No tags selected.</p>
                   )}
-                {/* End Tags Flex Container */}
                 </div>
-              {/* End Tags Column */}
               </div>
 
-            {/* End Content Grid */}
             </div>
-
-          {/* End Main content padding */}
           </div>
-        {/* End Profile Card Container */}
         </div>
-      {/* End Centered container */}
+
       </div>
-    {/* End Main wrapper */}
     </main>
-  // End return
   )
-// End MemberProfilePage component
 }

@@ -45,38 +45,41 @@ export default function LoginForm() {
   // Return the main form JSX
   return (
     // Form Container
-    <form onSubmit={handleSubmit} className="space-y-5 glass-panel p-6 sm:p-8 rounded-3xl relative animate-fade-in max-w-md mx-auto w-full">
-      
-      {/* Header section inside the form */}
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
-        <p className="text-sm text-foreground/60">Enter your credentials to access the directory.</p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-5 bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 animate-fade-in w-full">
 
-      {/* Email block */}
+      {/* Email */}
       <div>
-        <label className="block text-sm font-medium mb-1">Email Address</label>
-        <input name="email" type="email" required placeholder="you@example.com" className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-brand-500/50 outline-none" />
+        <label className="block text-sm font-extrabold text-navy-600 mb-1.5">Email Address</label>
+        <input
+          name="email" type="email" required placeholder="you@example.com"
+          className="w-full px-4 py-3 bg-white border border-border rounded-xl text-navy-600 placeholder:text-muted font-medium focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-colors"
+        />
       </div>
 
-      {/* Password block */}
+      {/* Password */}
       <div>
-        <label className="block text-sm font-medium mb-1">Password</label>
-        <input name="password" type="password" required placeholder="••••••••" className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-brand-500/50 outline-none" />
+        <label className="block text-sm font-extrabold text-navy-600 mb-1.5">Password</label>
+        <input
+          name="password" type="password" required placeholder="••••••••"
+          className="w-full px-4 py-3 bg-white border border-border rounded-xl text-navy-600 placeholder:text-muted font-medium focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-colors"
+        />
       </div>
 
-      {/* Error Message rendering */}
+      {/* Error */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-          <AlertCircle className="w-4 h-4" />
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 text-sm font-semibold">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Submit Button */}
-      <button type="submit" disabled={isPending} className="w-full btn-primary text-lg py-3 mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-        {isPending ? "Authenticating..." : "Sign In"}
-        {!isPending && <LogIn className="w-5 h-5" />}
+      {/* Submit */}
+      <button
+        type="submit" disabled={isPending}
+        className="w-full btn-primary text-base py-3.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isPending ? "Signing in…" : "Sign In"}
+        {!isPending && <LogIn className="w-4 h-4" />}
       </button>
 
     </form>
