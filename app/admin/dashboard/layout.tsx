@@ -1,65 +1,75 @@
-// Import Next.js Link
-import Link from "next/link"
-// Import Lucide icons
-import { Users, LayoutDashboard, Megaphone, LogOut, ShieldCheck } from "lucide-react"
+"use client"
 
-// Export default Admin Layout wrapper
+import Link from "next/link"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { Users, LayoutDashboard, Megaphone, LogOut, ShieldCheck, Star } from "lucide-react"
+
+const navItems = [
+  { href: "/admin/dashboard",                label: "Overview",         icon: LayoutDashboard },
+  { href: "/admin/dashboard/members",        label: "Member Approvals", icon: Users           },
+  { href: "/admin/dashboard/sec",            label: "SEC Management",   icon: ShieldCheck     },
+  { href: "/admin/dashboard/genius-circle",  label: "Genius Circle",    icon: Star            },
+  { href: "/admin/dashboard/announcements",  label: "Announcements",    icon: Megaphone       },
+]
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Return JSX Layout
+  const pathname = usePathname()
+
   return (
-    // Main full-height container with flex
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
-      
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-surface border-r border-border p-6 flex flex-col gap-6 flex-shrink-0">
-        
-        {/* Branding */}
-        <div>
-          <h2 className="text-xl font-black gradient-text mb-1">Skillers Admin</h2>
-          <p className="text-xs text-foreground/50 font-medium">Command Center</p>
+    <div className="min-h-screen bg-[#F7F8FA] flex">
+
+      {/* Sidebar */}
+      <aside className="fixed top-0 left-0 h-screen w-60 bg-navy-900 flex flex-col z-40">
+
+        {/* Logo */}
+        <div className="px-5 py-5 border-b border-navy-700">
+          <Link href="/admin/dashboard" className="flex items-center gap-2">
+            <Image src="/ingeniusly-ghana-mark.png" alt="inGeniusly" width={30} height={30} className="object-contain" />
+            <div className="leading-tight">
+              <p className="text-white font-black text-sm">inGeniusly</p>
+              <p className="text-gold-400 font-bold text-xs">Admin Panel</p>
+            </div>
+          </Link>
         </div>
-        
-        {/* Navigation Links */}
-        <nav className="flex-grow space-y-2 mt-4">
-          {/* Dashboard Overview */}
-          <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
-            <LayoutDashboard className="w-4 h-4" /> Overview
-          </Link>
-          {/* Member Management */}
-          <Link href="/admin/dashboard/members" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
-            <Users className="w-4 h-4" /> Member Approvals
-          </Link>
-          {/* SEC Management */}
-          <Link href="/admin/dashboard/sec" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
-            <ShieldCheck className="w-4 h-4" /> SEC Management
-          </Link>
-          {/* Announcements */}
-          <Link href="/admin/dashboard/announcements" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-hover transition-colors font-medium text-sm text-foreground/80 hover:text-foreground">
-            <Megaphone className="w-4 h-4" /> Announcements
-          </Link>
-        {/* End Navigation Links */}
+
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = href === "/admin/dashboard" ? pathname === href : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${
+                  active
+                    ? "bg-gold-500/15 text-gold-400 border-l-2 border-gold-500"
+                    : "text-navy-300 hover:bg-navy-700 hover:text-white"
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {label}
+              </Link>
+            )
+          })}
         </nav>
-        
-        {/* Logout Form Button */}
-        <form action="/auth/logout" method="POST">
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl hover:bg-red-500/10 hover:text-red-500 text-foreground/60 transition-colors font-medium text-sm">
-            <LogOut className="w-4 h-4" /> Sign Out
-          </button>
-        </form>
-        
-      {/* End Sidebar */}
+
+        {/* Sign out */}
+        <div className="px-2 py-4 border-t border-navy-700">
+          <form action="/auth/logout" method="POST">
+            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-navy-400 hover:text-red-400 hover:bg-navy-800 transition-colors">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </form>
+        </div>
+
       </aside>
-      
-      {/* Main Content Area */}
-      <main className="flex-grow p-6 lg:p-10 max-h-screen overflow-y-auto">
-        {/* Render child routes */}
+
+      {/* Main content */}
+      <main className="ml-60 flex-1 min-h-screen overflow-y-auto p-8">
         {children}
-      {/* End Main Content */}
       </main>
-      
-    {/* End container */}
+
     </div>
-  // End return
   )
-// End AdminLayout
 }

@@ -32,21 +32,21 @@ async function getAdminClient() {
 
 // Export async action to get top-level metrics for the dashboard
 export async function getDashboardMetrics() {
-  // Get elevated client
   const adminClient = await getAdminClient()
-  
-  // Query pending members count
-  const { count: pendingCount } = await adminClient.from("members").select("*", { count: "exact", head: true }).eq("status", "pending")
-  // Query approved members count
-  const { count: approvedCount } = await adminClient.from("members").select("*", { count: "exact", head: true }).eq("status", "approved")
-  // Query total goals count
-  const { count: goalsCount } = await adminClient.from("goals").select("*", { count: "exact", head: true })
-  // Query total connection requests
-  const { count: connectionsCount } = await adminClient.from("connection_requests").select("*", { count: "exact", head: true })
 
-  // Return aggregated metrics
-  return { pendingCount, approvedCount, goalsCount, connectionsCount }
-// End getDashboardMetrics
+  const [
+    { count: pendingCount },
+    { count: approvedCount },
+    { count: secCount },
+    { count: geniusCircleCount },
+  ] = await Promise.all([
+    adminClient.from("members").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    adminClient.from("members").select("*", { count: "exact", head: true }).eq("status", "approved"),
+    adminClient.from("members").select("*", { count: "exact", head: true }).eq("is_sec", true),
+    adminClient.from("members").select("*", { count: "exact", head: true }).eq("is_genius_circle", true),
+  ])
+
+  return { pendingCount, approvedCount, secCount, geniusCircleCount }
 }
 
 // Export async action to fetch all pending members for admin review
@@ -57,7 +57,7 @@ export async function getPendingMembers() {
   // Query all members with pending status
   const { data, error } = await adminClient
     .from("members")
-    .select("id, name, email, slug, created_at")
+    .select("id, name, email, slug, created_at, genius_circle_requested")
     .eq("status", "pending")
     .order("created_at", { ascending: false })
 
@@ -248,5 +248,58 @@ export async function updateSecRole(memberId: string, role: string) {
 
   revalidatePath("/admin/dashboard/sec")
   revalidatePath("/sec")
+  return { success: true }
+}
+
+// Fetch all approved members with Genius Circle data
+export async function getGeniusCircleMembers() {
+  const adminClient = await getAdminClient()
+
+  const { data, error } = await adminClient
+    .from("members")
+    .select("id, name, email, is_genius_circle, genius_circle_requested")
+    .eq("status", "approved")
+    .order("name")
+
+  return { data, error }
+}
+
+// Grant or revoke Genius Circle access
+export async function toggleGeniusCircle(memberId: string, grant: boolean) {
+  const adminClient = await getAdminClient()
+
+  const { error } = await adminClient
+    .from("members")
+    .update({ is_genius_circle: grant })
+    .eq("id", memberId)
+
+  if (error) return { error: "Failed to update Genius Circle status." }
+
+  revalidatePath("/admin/dashboard/genius-circle")
+  return { success: true }
+}
+
+// Award tokens to a member
+export async function awardTokens(memberId: string, amount: number, reason: string) {
+  const adminClient = await getAdminClient()
+
+  const { error: txError } = await adminClient
+    .from("token_transactions")
+    .insert({ member_id: memberId, amount, reason })
+
+  if (txError) return { error: txError.message }
+
+  const { error: updateError } = await adminClient
+    .from("members")
+    .update({ tokens: adminClient.rpc("increment_tokens", { member_id: memberId, amount }) })
+    .eq("id", memberId)
+
+  if (updateError) {
+    // Fallback: fetch current and add
+    const { data: m } = await adminClient.from("members").select("tokens").eq("id", memberId).single()
+    await adminClient.from("members").update({ tokens: (m?.tokens ?? 0) + amount }).eq("id", memberId)
+  }
+
+  revalidatePath("/dashboard")
   return { success: true }
 }

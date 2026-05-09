@@ -8,6 +8,7 @@ export async function registerMember(formData: FormData) {
   // Extract form values
   const email = formData.get("email") as string
   const password = formData.get("password") as string
+  const geniusCircleRequested = formData.get("genius_circle_requested") === "true"
 
   // Basic validation
   if (!email || !password) {
@@ -51,10 +52,11 @@ export async function registerMember(formData: FormData) {
     .from("members")
     .insert({
       id: authData.user.id,
-      name: emailPrefix, // Placeholder name from email, user fills in real name on Edit Profile
+      name: emailPrefix,
       slug,
       email,
       status: "pending",
+      genius_circle_requested: geniusCircleRequested,
     })
 
   // Handle member insert errors

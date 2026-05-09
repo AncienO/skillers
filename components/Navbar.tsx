@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
 
-const navLinks = [
+const publicLinks = [
   { label: "Directory", href: "/directory" },
   { label: "SEC",       href: "/sec"       },
 ]
@@ -12,11 +12,19 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname()
 
+  // Hide the public navbar inside authenticated app layouts
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/sec/workspace") ||
+    pathname.startsWith("/genius-circle") ||
+    pathname.startsWith("/admin")
+  ) return null
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-[70px] flex items-center justify-between">
 
-        {/* Logo: full wordmark + "Ghana" label */}
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
           <Image
             src="/ingeniusly-wordmark.png"
@@ -34,9 +42,9 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Primary Nav */}
+        {/* Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
+          {publicLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

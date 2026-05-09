@@ -5,7 +5,7 @@ import { useState, useTransition } from "react"
 // Import Server Action for registration
 import { registerMember } from "@/lib/actions/signup.actions"
 // Import Lucide icons
-import { Mail, Lock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
+import { Mail, Lock, CheckCircle, AlertCircle, ArrowRight, Star } from "lucide-react"
 // Import Link for navigation
 import Link from "next/link"
 
@@ -123,6 +123,25 @@ export default function SignupForm() {
           />
         </div>
       </div>
+
+      {/* Genius Circle */}
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <input
+          name="genius_circle_requested"
+          type="checkbox"
+          value="true"
+          className="mt-0.5 w-4 h-4 accent-gold-500 cursor-pointer flex-shrink-0"
+        />
+        <div>
+          <div className="flex items-center gap-1.5 text-sm font-bold text-navy-700">
+            <Star className="w-3.5 h-3.5 text-gold-500 fill-gold-500" />
+            I&apos;m part of the Genius Circle
+          </div>
+          <p className="text-xs text-muted font-medium mt-0.5">
+            Request access to the exclusive Genius Circle community. An admin will verify and approve your access.
+          </p>
+        </div>
+      </label>
 
       {/* Error Message */}
       {error && (

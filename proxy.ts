@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Import createServerClient from Supabase SSR
 import { createServerClient } from '@supabase/ssr'
 
-// Export async proxy function
+// Export async proxy function (Next.js 16 renamed middleware to proxy)
 export async function proxy(request: NextRequest) {
   // Try catching any errors during initialization
   try {
@@ -69,9 +69,11 @@ export async function proxy(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     // Determine if the incoming request is targeting a protected route
-    const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') || 
-                             request.nextUrl.pathname.startsWith('/directory') || 
-                             request.nextUrl.pathname.startsWith('/sec')
+    const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') ||
+                             request.nextUrl.pathname.startsWith('/directory') ||
+                             request.nextUrl.pathname.startsWith('/sec/workspace') ||
+                             request.nextUrl.pathname.startsWith('/dashboard') ||
+                             request.nextUrl.pathname.startsWith('/genius-circle')
 
     // Define auth-related routes that should never be blocked (to prevent redirect loops)
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || 
@@ -97,6 +99,21 @@ export async function proxy(request: NextRequest) {
       // If not an admin
       if (!adminRole) {
         // Kick them out to the directory
+        const url = request.nextUrl.clone()
+        url.pathname = '/directory'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // SEC workspace: only approved SEC members (Next.js 16 uses proxy.ts only — no separate middleware)
+    if (request.nextUrl.pathname.startsWith('/sec/workspace') && user && !isAuthRoute) {
+      const { data: member } = await supabase
+        .from('members')
+        .select('is_sec, status')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (!member?.is_sec || member?.status !== 'approved') {
         const url = request.nextUrl.clone()
         url.pathname = '/directory'
         return NextResponse.redirect(url)
